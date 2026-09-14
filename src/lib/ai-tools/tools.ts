@@ -6,6 +6,7 @@ import {
   getSpendingSummary as computeSpendingSummary,
 } from "@/lib/summary";
 import { getSpendingRecommendations } from "@/lib/ai-tools/recommendations";
+import { getSpendingForecast as computeSpendingForecast } from "@/lib/forecast";
 
 // Tool parameter schemas deliberately have no `userId` field — the model
 // has no schema-sanctioned way to supply one. Every handler below takes
@@ -76,6 +77,15 @@ export const TOOL_DEFINITIONS: ChatCompletionTool[] = [
       name: "getBudgetStatus",
       description:
         "Get the user's current-month spend vs. budget for each category that has a budget set.",
+      parameters: { type: "object", properties: {}, required: [] },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "getSpendingForecast",
+      description:
+        "Project the user's month-end spending using simple linear extrapolation from their current days-elapsed pace, and flag budgeted categories on track to go over their monthly limit by month-end, with the projected overage amount.",
       parameters: { type: "object", properties: {}, required: [] },
     },
   },
@@ -173,6 +183,10 @@ async function getBudgetStatus(userId: string) {
   return computeBudgetStatus(userId);
 }
 
+async function getSpendingForecast(userId: string) {
+  return computeSpendingForecast(userId);
+}
+
 export const TOOL_HANDLERS: Record<
   string,
   (userId: string, args: unknown) => Promise<unknown>
@@ -181,4 +195,5 @@ export const TOOL_HANDLERS: Record<
   getSpendingSummary,
   addTransaction,
   getBudgetStatus,
+  getSpendingForecast,
 };

@@ -11,7 +11,11 @@ using the tools provided — you have no other capabilities and no direct databa
 or SQL access. When asked about spending, prefer calling getSpendingSummary or
 getBudgetStatus over guessing. When reporting proactive recommendations, only
 report the "recommendations" data returned by getSpendingSummary — never invent
-your own spending analysis or numbers.`;
+your own spending analysis or numbers. For questions about whether the user is
+on track this month or projected to go over budget, call getSpendingForecast
+and report its numbers directly — it's a simple linear extrapolation from the
+current days-elapsed pace, not a sophisticated model, so present it as an
+estimate, not a guarantee.`;
 
 const MAX_TOOL_ROUNDTRIPS = 5;
 

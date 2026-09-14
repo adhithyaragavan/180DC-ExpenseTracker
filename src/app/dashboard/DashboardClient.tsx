@@ -30,9 +30,25 @@ type Summary = {
   }[];
 };
 
+type Forecast = {
+  daysElapsed: number;
+  daysRemaining: number;
+  currentSpend: number;
+  projectedMonthEndSpend: number;
+  categoryForecasts: {
+    categoryId: string;
+    category: string;
+    currentSpend: number;
+    projectedSpend: number;
+    monthlyLimit: number;
+    projectedOverage: number;
+  }[];
+};
+
 export function DashboardClient() {
   const [summary, setSummary] = useState<Summary | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [forecast, setForecast] = useState<Forecast | null>(null);
 
   useEffect(() => {
     fetch("/api/summary")
@@ -42,6 +58,13 @@ export function DashboardClient() {
       })
       .then(setSummary)
       .catch((err) => setError(err.message));
+
+    // Independent of the summary fetch — the forecast card shouldn't
+    // block on or couple to the chart data.
+    fetch("/api/forecast")
+      .then((res) => (res.ok ? res.json() : null))
+      .then(setForecast)
+      .catch(() => {});
   }, []);
 
   if (error) {
@@ -62,6 +85,41 @@ export function DashboardClient() {
         <StatTile label="All-time income" value={summary.totals.allTime.income} />
         <StatTile label="All-time expense" value={summary.totals.allTime.expense} />
       </section>
+
+      {forecast && (
+        <section className="rounded border p-4">
+          <h2 className="mb-2 text-lg font-medium">Spending forecast</h2>
+          <p className="text-sm text-zinc-700">
+            At this pace, you&apos;re on track to spend{" "}
+            <span className="font-semibold">
+              ${forecast.projectedMonthEndSpend.toFixed(2)}
+            </span>{" "}
+            by month-end ({forecast.daysElapsed} day
+            {forecast.daysElapsed === 1 ? "" : "s"} in, {forecast.daysRemaining}{" "}
+            remaining). Based on ${forecast.currentSpend.toFixed(2)} spent so far —
+            a simple linear projection, not a guarantee.
+          </p>
+          {forecast.categoryForecasts.some((c) => c.projectedOverage > 0) && (
+            <ul className="mt-3 flex flex-col gap-1">
+              {forecast.categoryForecasts
+                .filter((c) => c.projectedOverage > 0)
+                .map((c) => (
+                  <li
+                    key={c.categoryId}
+                    className="flex items-center justify-between rounded bg-red-50 px-2 py-1 text-sm"
+                  >
+                    <span className="font-medium text-red-700">{c.category}</span>
+                    <span className="text-red-700">
+                      projected ${c.projectedSpend.toFixed(2)} / $
+                      {c.monthlyLimit.toFixed(2)} limit (+$
+                      {c.projectedOverage.toFixed(2)})
+                    </span>
+                  </li>
+                ))}
+            </ul>
+          )}
+        </section>
+      )}
 
       <section>
         <h2 className="mb-3 text-lg font-medium">Spending by category (this month)</h2>
